@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 horas
+    #ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 2 horas
+    
     
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str
@@ -40,6 +42,17 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         """Convierte el string de origins a lista"""
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+    
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """
+        Retorna los orígenes permitidos según el modo DEBUG
+        - DEBUG=True: Permite todos los orígenes (*)
+        - DEBUG=False: Solo orígenes específicos
+        """
+        if self.DEBUG:
+            return ["*"]
+        return self.cors_origins
 
 
 # Instancia global de configuración
