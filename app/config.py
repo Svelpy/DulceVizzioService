@@ -46,7 +46,13 @@ class Settings(BaseSettings):
     
     @property
     def cors_origins_list(self) -> list:
-        """Convierte ALLOWED_ORIGINS de string a lista"""
+        """
+        Retorna la lista de orígenes permitidos.
+        - Si DEBUG=True: retorna ["*"] (todos)
+        - Si DEBUG=False: parsea ALLOWED_ORIGINS
+        """
+        if self.DEBUG:
+            return ["*"]
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
     
     class Config:
