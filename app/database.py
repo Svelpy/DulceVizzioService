@@ -34,7 +34,11 @@ async def connect_to_mongo():
             database=mongodb_client[settings.MONGODB_DB_NAME],
             document_models=[
                 User,
-                # Aquí agregaremos más modelos: Course, Enrollment, etc.
+                "app.models.course.Course",
+                "app.models.course.CourseReview",
+                "app.models.lesson.Lesson",
+                "app.models.lesson.LessonComment",
+                "app.models.enrollment.Enrollment"
             ]
         )
         

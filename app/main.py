@@ -86,14 +86,17 @@ async def health_check():
 
 
 # Registrar routers
-from app.routers import auth, users
+from app.routers import auth, users, courses, lessons, materials, enrollments
 
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(courses.router)
+app.include_router(lessons.router)
+app.include_router(materials.router)
+app.include_router(enrollments.router, prefix="/api") # Prefijo explícito para consistencia
 
 # TODO: Registrar más routers aquí
-# from app.routers import courses, enrollments, memberships, comments
-# app.include_router(courses.router)
+# from app.routers import enrollments, memberships, comments
 # app.include_router(enrollments.router)
 # app.include_router(memberships.router)
 # app.include_router(comments.router)

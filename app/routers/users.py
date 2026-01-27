@@ -9,7 +9,7 @@ from typing import Optional
 from app.schemas.user_schema import UserResponse, UserUpdate, UserCreate, PasswordValidationMixin, PaginatedResponse
 from app.models.user import User
 from app.models.enums import Role
-from app.utils.dependencies import require_admin, require_superadmin
+from app.utils.dependencies import get_current_admin, get_current_superadmin
 from app.services.auth_service import auth_service
 from app.services.cloudinary_service import cloudinary_service
 from app.schemas.user_schema import UserUpdate, UserCreate, PasswordValidationMixin
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/users", tags=["User Management"])
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(user_data: UserCreate, current_user: User = Depends(require_admin)):
+async def create_user(user_data: UserCreate, current_user: User = Depends(get_current_admin)):
     """
     Crear usuario (ADMIN o SUPERADMIN)
     
@@ -69,7 +69,7 @@ async def list_users(
     q: Optional[str] = None,
     role: Optional[Role] = None,
     is_active: Optional[bool] = None,
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(get_current_admin)
 ):
     """
     Listar usuarios con paginación y filtros (ADMIN o SUPERADMIN)
@@ -130,7 +130,7 @@ async def list_users(
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: str,
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(get_current_admin)
 ):
     """
     Obtener información de un usuario específico (ADMIN o SUPERADMIN)
@@ -158,7 +158,7 @@ async def get_user(
 async def update_user(
     user_id: str,
     update_data: UserUpdate,
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(get_current_admin)
 ):
     """
     Actualizar datos del usuario (Datos textuales)
@@ -220,7 +220,7 @@ async def update_user(
 async def update_user_avatar(
     user_id: str,
     file: UploadFile = File(...),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(get_current_admin)
 ):
     """
     Actualizar avatar de usuario (ADMIN o SUPERADMIN)
@@ -259,7 +259,7 @@ async def update_user_avatar(
 async def admin_reset_password(
     user_id: str,
     password_data: PasswordValidationMixin = Body(...),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(get_current_admin)
 ):
     """
     Restablecer contraseña de usuario (ADMIN o SUPERADMIN)
@@ -296,7 +296,7 @@ async def admin_reset_password(
 @router.patch("/{user_id}/toggle-active", response_model=UserResponse)
 async def toggle_user_active(
     user_id: str,
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(get_current_admin)
 ):
     """
     Activar/Desactivar usuario (ADMIN o SUPERADMIN)
@@ -346,7 +346,7 @@ async def toggle_user_active(
 async def change_user_role(
     user_id: str,
     new_role: Role = Body(..., embed=True),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(get_current_superadmin)
 ):
     """
     Cambiar rol de usuario (SOLO SUPERADMIN)
@@ -393,7 +393,7 @@ async def change_user_role(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: str,
-    current_user: User = Depends(require_admin) # ADMIN o SUPERADMIN
+    current_user: User = Depends(get_current_admin) # ADMIN o SUPERADMIN
 ):
     """
     Eliminar usuario (Híbrido)

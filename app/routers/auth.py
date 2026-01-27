@@ -76,7 +76,7 @@ async def update_my_avatar(
 
 
 
-@router.patch("/change-password")
+@router.patch("/me/change-password")
 async def change_password(
     request: Request,
     password_data: ChangePasswordSchema,

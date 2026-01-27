@@ -76,7 +76,7 @@ async def get_current_user(
 
 from app.models.enums import Role
 
-async def require_admin(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
     """
     Verificar que el usuario actual sea ADMIN o SUPERADMIN
     """
@@ -89,7 +89,7 @@ async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-async def require_superadmin(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_superadmin(current_user: User = Depends(get_current_user)) -> User:
     """
     Verificar que el usuario actual sea SUPERADMIN
     """

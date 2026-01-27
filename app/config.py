@@ -36,7 +36,6 @@ class Settings(BaseSettings):
             return self.ACCESS_TOKEN_EXPIRE_MINUTES_DEBUG
         return self.ACCESS_TOKEN_EXPIRE_MINUTES_PROD
     
-    
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str
     CLOUDINARY_API_KEY: str
@@ -45,26 +44,15 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
     
+    @property
+    def cors_origins_list(self) -> list:
+        """Convierte ALLOWED_ORIGINS de string a lista"""
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
-    
-    @property
-    def cors_origins(self) -> list[str]:
-        """Convierte el string de origins a lista"""
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
-    
-    @property
-    def cors_origins_list(self) -> list[str]:
-        """
-        Retorna los orígenes permitidos según el modo DEBUG
-        - DEBUG=True: Permite todos los orígenes (*)
-        - DEBUG=False: Solo orígenes específicos
-        """
-        if self.DEBUG:
-            return ["*"]
-        return self.cors_origins
 
 
-# Instancia global de configuración
+# Instancia singleton de Settings
 settings = Settings()
