@@ -3,11 +3,12 @@ Router para endpoints de Enrollments (Inscripciones)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from typing import List, Optional
+from typing import Optional
 from app.models.user import User
 from app.models.enums import EnrollmentStatus
 from app.schemas.enrollment_schema import (
     EnrollmentCreateSchema,
+    EnrollmentListResponse,
     EnrollmentResponseSchema,
     EnrollmentProgressUpdateSchema,
     EnrollmentExtendSchema
@@ -21,9 +22,11 @@ router = APIRouter(
 
 # --- Endpoints de Usuario ---
 
-@router.get("/enrollments/me", response_model=List[EnrollmentResponseSchema])
+@router.get("/enrollments/me", response_model=EnrollmentListResponse)
 async def get_my_enrollments(
     status: Optional[EnrollmentStatus] = Query(None, description="Filtrar por estado"),
+    page: int = Query(1, ge=1, description="Número de página"),
+    size: int = Query(10, ge=1, le=100, description="Items por página"),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -31,10 +34,43 @@ async def get_my_enrollments(
     
     Query params:
     - status: ACTIVE | EXPIRED | CANCELLED (opcional)
+    - page: Página actual (default 1)
+    - size: Items por página (default 10)
     """
     return await EnrollmentService.get_user_enrollments(
-        str(current_user.id),
-        status
+        user_id=str(current_user.id),
+        status=status,
+        page=page,
+        size=size
+    )
+
+
+@router.get("/enrollments", response_model=EnrollmentListResponse)
+async def get_all_enrollments(
+    user_id: Optional[str] = Query(None, description="Filtrar por ID de estudiante"),
+    course_id: Optional[str] = Query(None, description="Filtrar por ID de curso"),
+    status: Optional[EnrollmentStatus] = Query(None, description="Filtrar por estado"),
+    page: int = Query(1, ge=1, description="Número de página"),
+    size: int = Query(10, ge=1, le=100, description="Items por página"),
+    current_user: User = Depends(get_current_admin)
+):
+    """
+    Listar inscripciones (Admin).
+    
+    Permite filtrar por usuario, curso y estado.
+    """
+    filters = {
+        "user_id": user_id,
+        "course_id": course_id,
+        "status": status
+    }
+    # Eliminar claves con valor None
+    filters = {k: v for k, v in filters.items() if v is not None}
+    
+    return await EnrollmentService.get_all_enrollments(
+        page=page, 
+        size=size, 
+        filters=filters
     )
 
 @router.get("/enrollments/{enrollment_id}", response_model=EnrollmentResponseSchema)

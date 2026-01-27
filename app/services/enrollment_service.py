@@ -63,17 +63,71 @@ class EnrollmentService:
     @staticmethod
     async def get_user_enrollments(
         user_id: str,
-        status: Optional[EnrollmentStatus] = None
-    ) -> List[Enrollment]:
-        """Obtener enrollments de un usuario"""
+        status: Optional[EnrollmentStatus] = None,
+        page: int = 1,
+        size: int = 10
+    ) -> Dict[str, Any]:
+        """Obtener enrollments de un usuario con paginación"""
         filters = [Enrollment.user_id == user_id]
         
         if status:
             filters.append(Enrollment.status == status)
         
-        enrollments = await Enrollment.find(*filters).sort("-enrolled_at").to_list()
+        total = await Enrollment.find(*filters).count()
         
-        return enrollments
+        # Calcular paginación
+        total_pages = (total + size - 1) // size
+        
+        # Obtener items
+        items = await Enrollment.find(*filters)\
+            .sort("-enrolled_at")\
+            .skip((page - 1) * size)\
+            .limit(size)\
+            .to_list()
+        
+        return {
+            "total": total,
+            "page": page,
+            "per_page": size,
+            "total_pages": total_pages,
+            "data": items
+        }
+
+    @staticmethod
+    async def get_all_enrollments(
+        page: int = 1,
+        size: int = 10,
+        filters: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """Obtener todos los enrollments (Admin) con filtros y paginación"""
+        query_filters = []
+        
+        if filters:
+            if filters.get("user_id"):
+                query_filters.append(Enrollment.user_id == filters["user_id"])
+            if filters.get("course_id"):
+                query_filters.append(Enrollment.course_id == filters["course_id"])
+            if filters.get("status"):
+                query_filters.append(Enrollment.status == filters["status"])
+            
+        # Ejecutar query
+        query = Enrollment.find(*query_filters)
+        total = await query.count()
+        
+        total_pages = (total + size - 1) // size
+        
+        items = await query.sort("-enrolled_at")\
+            .skip((page - 1) * size)\
+            .limit(size)\
+            .to_list()
+            
+        return {
+            "total": total,
+            "page": page,
+            "per_page": size,
+            "total_pages": total_pages,
+            "data": items
+        }
     
     @staticmethod
     async def get_enrollment_by_id(enrollment_id: str, user: User) -> Enrollment:

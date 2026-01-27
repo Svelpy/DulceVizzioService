@@ -4,7 +4,7 @@ Validación y serialización de datos de inscripciones a cursos
 """
 
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
-from typing import Optional
+from typing import Optional, List, TypeVar, Generic
 from datetime import datetime
 from beanie import PydanticObjectId
 from app.models.enums import EnrollmentStatus
@@ -86,3 +86,19 @@ class EnrollmentResponseSchema(BaseModel):
             }
         }
     )
+
+T = TypeVar('T')
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Schema genérico de respuesta paginada"""
+    total: int          # Total de registros encontrados
+    page: int           # Página actual
+    per_page: int       # Registros por página
+    total_pages: int    # Total de páginas
+    data: List[T]       # Lista de objetos
+
+
+class EnrollmentListResponse(PaginatedResponse[EnrollmentResponseSchema]):
+    """Respuesta paginada de enrollments"""
+    pass
