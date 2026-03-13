@@ -18,9 +18,40 @@ from app.schemas.enrollment_schema import (
 
 
 class EnrollmentService:
-    
     @staticmethod
-    async def create_enrollment(data: EnrollmentCreateSchema, admin: User) -> Enrollment:
+    async def _build_enrollment_response(enrollment: Enrollment,user: Optional[User] = None,course: Optional[Course] = None) -> Dict[str, Any]:
+        """Helper para construir el diccionario de respuesta anidado."""
+        
+        # Si no nos pasan el usuario/curso, lo buscamos en la BD
+        if not user:
+            user = await User.get(enrollment.user_id)
+        if not course:
+            course = await Course.get(enrollment.course_id)
+            
+        enrollment_dict = enrollment.model_dump(mode='json')
+        
+        enrollment_dict["user"] = {
+            "id": str(user.id),
+            "username": user.username,
+            "full_name": user.full_name,
+            "role": user.role,
+            "is_active": user.is_active,
+            "avatar_url": str(user.avatar_url) if user.avatar_url else None
+        } if user else None
+        
+        enrollment_dict["course"] = {
+            "id": str(course.id),
+            "title": course.title,
+            "slug": course.slug,
+            "cover_image_url": str(course.cover_image_url) if course.cover_image_url else None,
+            "price": course.price,
+            "currency": course.currency
+        } if course else None
+        
+        return enrollment_dict
+
+    @staticmethod
+    async def create_enrollment(data: EnrollmentCreateSchema, admin: User) -> Dict[str, Any]:
         """
         Crear enrollment (solo admin).
         El admin inscribe manualmente al estudiante.
@@ -58,7 +89,7 @@ class EnrollmentService:
         
         await enrollment.save()
         
-        return enrollment
+        return await EnrollmentService._build_enrollment_response(enrollment=enrollment, user=user, course=course)
     
     @staticmethod
     async def get_user_enrollments(
@@ -122,30 +153,19 @@ class EnrollmentService:
             .limit(size)\
             .to_list()
         
-        # Obtener IDs de cursos únicos
+        # Armamos un diccionario con todos los cursos de un solo usuario
         course_ids = list(set([e.course_id for e in items]))
-        
-        # Fetch cursos en una sola query
         courses = await Course.find({"_id": {"$in": course_ids}}).to_list()
-        courses_dict = {c.id: c for c in courses}
-        
-        # Convertir enrollments a dicts e incluir curso
+        courses_dict = {c.id: c for c in courses}  #diccionario {course_id:course object}
+        #un unico user_doc para todas las vueltas
+        user_doc = await User.get(user_id)      
         enrollments_data = []
+
         for enrollment in items:
-            enrollment_dict = enrollment.model_dump(mode='json')
-            
-            # Agregar datos del curso si existe
-            course = courses_dict.get(enrollment.course_id)
-            if course:
-                enrollment_dict["course"] = {
-                    "id": str(course.id),
-                    "title": course.title,
-                    "slug": course.slug,
-                    "cover_image_url": str(course.cover_image_url) if course.cover_image_url else None,
-                    "price": course.price,
-                    "currency": course.currency
-                }
-            
+            #un course_doc distinto para cada vuelta
+            course_doc = courses_dict.get(enrollment.course_id)
+            #mandamos a la funcion helpper el usuario que no cambia y el curso que cambia en cada vuelta
+            enrollment_dict = await EnrollmentService._build_enrollment_response(enrollment=enrollment,user=user_doc,course=course_doc)
             enrollments_data.append(enrollment_dict)
         
         return {
@@ -224,30 +244,26 @@ class EnrollmentService:
             .limit(size)\
             .to_list()
         
-        # Obtener IDs de cursos únicos
+        # Armamos dos diccionarios, uno con todos los cursos y otro con todos los usuarios
         course_ids = list(set([e.course_id for e in items]))
+        user_ids = list(set([e.user_id for e in items]))
         
-        # Fetch cursos en una sola query
         courses = await Course.find({"_id": {"$in": course_ids}}).to_list()
-        courses_dict = {c.id: c for c in courses}
+        users = await User.find({"_id": {"$in": user_ids}}).to_list()
         
-        # Convertir enrollments a dicts e incluir curso
+        courses_dict = {c.id: c for c in courses}#diccionario {course_id:course_object}
+        users_dict = {u.id: u for u in users}#diccionario {user_id:user_object}
+        
+   
         enrollments_data = []
         for enrollment in items:
-            enrollment_dict = enrollment.model_dump(mode='json')
             
-            # Agregar datos del curso si existe
-            course = courses_dict.get(enrollment.course_id)
-            if course:
-                enrollment_dict["course"] = {
-                    "id": str(course.id),
-                    "title": course.title,
-                    "slug": course.slug,
-                    "cover_image_url": str(course.cover_image_url) if course.cover_image_url else None,
-                    "price": course.price,
-                    "currency": course.currency
-                }
-            
+            #un course_doc distinto para cada vuelta
+            course_doc = courses_dict.get(enrollment.course_id)
+            #un user_doc distinto para cada vuelta
+            user_doc = users_dict.get(enrollment.user_id)
+           
+            enrollment_dict = await EnrollmentService._build_enrollment_response(enrollment=enrollment,user=user_doc,course=course_doc)
             enrollments_data.append(enrollment_dict)
             
         return {
@@ -259,7 +275,7 @@ class EnrollmentService:
         }
     
     @staticmethod
-    async def get_enrollment_by_id(enrollment_id: str, user: User) -> Enrollment:
+    async def get_enrollment_by_id(enrollment_id: str, user: User) -> Dict[str, Any]:
         """Obtener enrollment por ID"""
         enrollment = await Enrollment.get(enrollment_id)
         
@@ -271,9 +287,9 @@ class EnrollmentService:
         is_owner = str(enrollment.user_id) == str(user.id)
         
         if not is_admin and not is_owner:
-            raise HTTPException(status_code=403, detail="No tienes permiso para ver esta inscripción")
+            raise HTTPException(status_code=403, detail="No tienes permiso para ver esta inscripción")    
         
-        return enrollment
+        return await EnrollmentService._build_enrollment_response(enrollment)
     
     @staticmethod
     async def update_progress(
@@ -313,7 +329,7 @@ class EnrollmentService:
         enrollment_id: str,
         data: EnrollmentExtendSchema,
         admin: User
-    ) -> Enrollment:
+    ) -> Dict[str, Any]:
         """Extender expiración de enrollment (admin)"""
         enrollment = await Enrollment.get(enrollment_id)
         
@@ -331,7 +347,7 @@ class EnrollmentService:
         
         await enrollment.save()
         
-        return enrollment
+        return await EnrollmentService._build_enrollment_response(enrollment)
     
     @staticmethod
     async def cancel_enrollment(enrollment_id: str, admin: User) -> Dict[str, str]:

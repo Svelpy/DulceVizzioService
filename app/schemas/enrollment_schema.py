@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 from typing import Optional, List, TypeVar, Generic
 from datetime import datetime
 from beanie import PydanticObjectId
-from app.models.enums import EnrollmentStatus
+from app.models.enums import EnrollmentStatus,Role
 
 
 class EnrollmentCreateSchema(BaseModel):
@@ -33,7 +33,7 @@ class EnrollmentExtendSchema(BaseModel):
     """Schema para extender expiración (admin)"""
     additional_days: int = Field(..., ge=1, le=3650, description="Días adicionales (máx 10 años)")
 
-
+#------------------------------------------------------------------------
 class CourseEmbeddedSchema(BaseModel):
     """
     Schema simplificado de curso para embedder en enrollments.
@@ -45,21 +45,25 @@ class CourseEmbeddedSchema(BaseModel):
     cover_image_url: Optional[HttpUrl] = None
     price: float
     currency: str = "USD"
-    
     model_config = ConfigDict(from_attributes=True)
 
-
-
+class UserEmbeddedSchema(BaseModel):
+    id: PydanticObjectId
+    username: str
+    full_name: str
+    role: Role
+    is_active: bool
+    avatar_url: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+#------------------------------------------------------------------------
 class EnrollmentResponseSchema(BaseModel):
     """
     Schema de respuesta de enrollment.
     Usado en GET /enrollments
     """
     id: PydanticObjectId
-    user_id: PydanticObjectId
-    course_id: PydanticObjectId
-    course: Optional[CourseEmbeddedSchema] = Field(None, description="Datos del curso (populated en servicio)")
-    
+    user: UserEmbeddedSchema
+    course: CourseEmbeddedSchema
     # Estado
     status: EnrollmentStatus
     enrolled_at: datetime
