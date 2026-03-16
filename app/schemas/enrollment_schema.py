@@ -53,7 +53,7 @@ class UserEmbeddedSchema(BaseModel):
     full_name: str
     role: Role
     is_active: bool
-    avatar_url: Optional[str] = None
+    avatar_url: Optional[HttpUrl] = None
     model_config = ConfigDict(from_attributes=True)
 #------------------------------------------------------------------------
 class EnrollmentResponseSchema(BaseModel):
@@ -91,19 +91,36 @@ class EnrollmentResponseSchema(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "example": {
-                "id": "507f1f77bcf86cd799439011",
-                "user_id": "507f1f77bcf86cd799439012",
-                "course_id": "507f1f77bcf86cd799439013",
+                "id": "69b82442ec85b6165e252b63",
+                "user": {
+                    "id": "695cecf6d3c63cf174c7f068",
+                    "username": "string1",
+                    "full_name": "string 1",
+                    "role": "USER",
+                    "is_active": True,
+                    "avatar_url": None
+                },
+                "course": {
+                    "id": "698c92f85a7111c912ec9835",
+                    "title": "Curso de Torta Comercial",
+                    "slug": "curso-de-torta-comercial",
+                    "cover_image_url": "https://res.cloudinary.com/dmxooones/image/upload/v1770821020/dulcevicio/courses/covers/xgw3ft4vikhyo3pfj65v.png",
+                    "price": 45,
+                    "currency": "USD"
+                },
                 "status": "ACTIVE",
-                "enrolled_at": "2026-01-20T10:00:00Z",
-                "expires_at": "2027-01-20T10:00:00Z",
-                "last_accessed_lesson_id": "507f1f77bcf86cd799439014",
-                "last_video_position_seconds": 332,
-                "last_accessed_at": "2026-01-25T15:30:00Z",
+                "enrolled_at": "2026-03-16T15:39:46.157000",
+                "expires_at": "2028-03-15T15:39:46.157000",
+                "last_accessed_lesson_id": None,
+                "last_video_position_seconds": None,
+                "last_accessed_at": None,
                 "completed_at": None,
                 "certificate_url": None,
-                "created_at": "2026-01-20T10:00:00Z",
-                "updated_at": "2026-01-25T15:30:00Z"
+                "notes": "string",
+                "created_at": "2026-03-16T15:39:46.158000",
+                "updated_at": "2026-03-16T15:42:36.046000",
+                "created_by": "695cc40748b8077a89cb103e",
+                "updated_by": "695cc40748b8077a89cb103e"
             }
         }
     )
