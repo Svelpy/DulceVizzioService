@@ -91,8 +91,11 @@ class CourseResponseSchema(CourseBase):
                 "category": "Repostería",
                 "subcategory": "Macarons",
                 "difficulty": "INTERMEDIATE",
+                "tags": ["macarons", "repostería francesa"],
                 "price": 29.99,
                 "currency": "USD",
+                "whatsapp_group_url": "https://chat.whatsapp.com/abc123",
+                "cover_image_url": "https://res.cloudinary.com/dmxooones/image/upload/v1770821020/dulcevicio/courses/covers/xgw3ft4vikhyo3pfj65v.png",
                 "status": "PUBLISHED",
                 "rating_average": 4.8,
                 "enrollment_count": 127,
@@ -101,7 +104,9 @@ class CourseResponseSchema(CourseBase):
                 "total_duration_hours": 2.5,
                 "created_at": "2026-01-20T10:00:00Z",
                 "published_at": "2026-01-22T10:00:00Z",
-                "updated_at": "2026-01-22T10:00:00Z"
+                "updated_at": "2026-01-22T10:00:00Z",
+                "created_by": "695cc40748b8077a89cb103e",
+                "updated_by": "695cc40748b8077a89cb103e"
             }
         }
     )

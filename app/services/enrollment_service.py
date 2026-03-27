@@ -39,14 +39,12 @@ class EnrollmentService:
             "avatar_url": str(user.avatar_url) if user.avatar_url else None
         } if user else None
         
-        enrollment_dict["course"] = {
-            "id": str(course.id),
-            "title": course.title,
-            "slug": course.slug,
-            "cover_image_url": str(course.cover_image_url) if course.cover_image_url else None,
-            "price": course.price,
-            "currency": course.currency
-        } if course else None
+        if course:
+            course_dict = course.model_dump(mode='json')
+            course_dict["is_enrolled"] = True
+            enrollment_dict["course"] = course_dict
+        else:
+            enrollment_dict["course"] = None
         
         return enrollment_dict
 

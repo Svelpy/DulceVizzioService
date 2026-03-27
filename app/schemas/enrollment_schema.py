@@ -8,6 +8,7 @@ from typing import Optional, List, TypeVar, Generic
 from datetime import datetime
 from beanie import PydanticObjectId
 from app.models.enums import EnrollmentStatus,Role
+from .course_schema import CourseResponseSchema
 
 
 class EnrollmentCreateSchema(BaseModel):
@@ -33,19 +34,6 @@ class EnrollmentExtendSchema(BaseModel):
     """Schema para extender expiración (admin)"""
     additional_days: int = Field(..., ge=1, le=3650, description="Días adicionales (máx 10 años)")
 
-#------------------------------------------------------------------------
-class CourseEmbeddedSchema(BaseModel):
-    """
-    Schema simplificado de curso para embedder en enrollments.
-    Solo incluye campos esenciales para navegación y UI.
-    """
-    id: PydanticObjectId
-    title: str
-    slug: str
-    cover_image_url: Optional[HttpUrl] = None
-    price: float
-    currency: str = "USD"
-    model_config = ConfigDict(from_attributes=True)
 
 class UserEmbeddedSchema(BaseModel):
     id: PydanticObjectId
@@ -63,7 +51,7 @@ class EnrollmentResponseSchema(BaseModel):
     """
     id: PydanticObjectId
     user: UserEmbeddedSchema
-    course: CourseEmbeddedSchema
+    course: CourseResponseSchema
     # Estado
     status: EnrollmentStatus
     enrolled_at: datetime
@@ -104,9 +92,26 @@ class EnrollmentResponseSchema(BaseModel):
                     "id": "698c92f85a7111c912ec9835",
                     "title": "Curso de Torta Comercial",
                     "slug": "curso-de-torta-comercial",
-                    "cover_image_url": "https://res.cloudinary.com/dmxooones/image/upload/v1770821020/dulcevicio/courses/covers/xgw3ft4vikhyo3pfj65v.png",
+                    "description": "Un curso completo para aprender repostería comercial...",
+                    "category": "Repostería",
+                    "subcategory": "Tortas",
+                    "difficulty": "INTERMEDIATE",
+                    "tags": ["tortas", "comercial"],
                     "price": 45,
-                    "currency": "USD"
+                    "currency": "USD",
+                    "whatsapp_group_url": "https://chat.whatsapp.com/abc123",
+                    "cover_image_url": "https://res.cloudinary.com/dmxooones/image/upload/v1770821020/dulcevicio/courses/covers/xgw3ft4vikhyo3pfj65v.png",
+                    "status": "PUBLISHED",
+                    "rating_average": 4.5,
+                    "enrollment_count": 10,
+                    "is_enrolled": True,
+                    "lessons_count": 5,
+                    "total_duration_hours": 3.5,
+                    "created_at": "2026-01-20T10:00:00Z",
+                    "published_at": "2026-01-22T10:00:00Z",
+                    "updated_at": "2026-01-22T10:00:00Z",
+                    "created_by": "695cc40748b8077a89cb103e",
+                    "updated_by": "695cc40748b8077a89cb103e"
                 },
                 "status": "ACTIVE",
                 "enrolled_at": "2026-03-16T15:39:46.157000",
