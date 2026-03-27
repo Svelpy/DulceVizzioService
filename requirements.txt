@@ -7,9 +7,9 @@ uvicorn[standard]>=0.34.0
 python-multipart>=0.0.6
 
 # ===== Base de Datos (MongoDB) =====
-motor>=3.3.0
-beanie>=1.27.0
-pymongo>=4.6.0
+motor>=3.3.0,<3.7.0
+beanie>=1.27.0,<2.0.0
+pymongo>=4.6.0,<4.11.0
 
 # ===== Autenticación y Seguridad =====
 python-jose[cryptography]>=3.3.0
