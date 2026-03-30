@@ -14,6 +14,8 @@ from app.schemas.course_schema import CourseCreateSchema, CourseUpdateSchema
 from app.utils.slug import generate_slug, ensure_unique_slug_course
 from app.services.cloudinary_service import CloudinaryService
 from datetime import datetime
+from app.models.enrollment import Enrollment
+from app.models.course import CourseReview
 
 class CourseService:
     
@@ -35,8 +37,8 @@ class CourseService:
         if not course:
             return
         
-        # Calcular estadísticas reales
-        lessons = await Lesson.find({"course_id": course.id}).to_list()
+        # Calcular estadísticas reales (sin las eliminadas lógicamente)
+        lessons = await Lesson.find({"course_id": course.id, "is_deleted": False}).to_list()
         
         course.lessons_count = len(lessons)
         total_seconds = sum(l.duration_seconds or 0 for l in lessons)
@@ -268,16 +270,43 @@ class CourseService:
             raise HTTPException(status_code=404, detail="Curso no encontrado")
             
         if user.role == Role.SUPERADMIN:
-            # Borrado FÍSICO: eliminar lessons asociadas también
+            # Borrado FÍSICO: cascada destructiva
             await Lesson.find({"course_id": course.id}).delete()
+            await Enrollment.find({"course_id": course.id}).delete()
+            await CourseReview.find({"course_id": str(course.id)}).delete()
             await course.delete()
-            return {"message": "Curso eliminado permanentemente"}
+            return {"message": "Curso eliminado permanentemente junto con lecciones, inscripciones y reseñas"}
         elif user.role == Role.ADMIN:
-            # Borrado LÓGICO
+            # Borrado LÓGICO: cascada de ocultamiento
             course.is_deleted = True
             course.deleted_at = datetime.utcnow()
             course.updated_by = str(user.id)
             await course.save()
-            return {"message": "Curso enviado a papelera"}
+            
+            # Ocultar también lecciones asociadas
+            lessons = await Lesson.find({"course_id": course.id, "is_deleted": False}).to_list()
+            for l in lessons:
+                l.is_deleted = True
+                l.deleted_at = datetime.utcnow()
+                l.updated_by = str(user.id)
+                await l.save()
+                
+            # Ocultar también inscripciones asociadas
+            enrollments = await Enrollment.find({"course_id": course.id, "is_deleted": False}).to_list()
+            for e in enrollments:
+                e.is_deleted = True
+                e.deleted_at = datetime.utcnow()
+                e.updated_by = str(user.id)
+                await e.save()
+                
+            # Ocultar reseñas asociadas
+            reviews = await CourseReview.find({"course_id": str(course.id), "is_deleted": False}).to_list()
+            for r in reviews:
+                r.is_deleted = True
+                r.deleted_at = datetime.utcnow()
+                r.updated_by = str(user.id)
+                await r.save()
+                
+            return {"message": "Curso enviado a papelera con todo su contenido asociado"}
         else:
              raise HTTPException(status_code=403, detail="No tienes permisos para eliminar cursos")

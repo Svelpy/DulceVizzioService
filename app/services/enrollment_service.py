@@ -21,6 +21,7 @@ class EnrollmentService:
     @staticmethod
     async def _build_enrollment_response(enrollment: Enrollment,user: Optional[User] = None,course: Optional[Course] = None) -> Dict[str, Any]:
         """Helper para construir el diccionario de respuesta anidado."""
+        from app.models.lesson import Lesson
         
         # Si no nos pasan el usuario/curso, lo buscamos en la BD
         if not user:
@@ -28,6 +29,18 @@ class EnrollmentService:
         if not course:
             course = await Course.get(enrollment.course_id)
             
+        # Tolerancia a fallos: Si la última lección vista la borró el admin, la recolocamos a la primera activa
+        if enrollment.last_accessed_lesson_id:
+            lesson = await Lesson.get(enrollment.last_accessed_lesson_id)
+            if not lesson or lesson.is_deleted:
+                # Buscar la primera válida
+                first_lesson = await Lesson.find(
+                    {"course_id": enrollment.course_id, "is_deleted": False}
+                ).sort("+order").first_or_none()
+                
+                enrollment.last_accessed_lesson_id = first_lesson.id if first_lesson else None
+                await enrollment.save()
+                
         enrollment_dict = enrollment.model_dump(mode='json')
         
         enrollment_dict["user"] = {
@@ -68,7 +81,8 @@ class EnrollmentService:
         existing = await Enrollment.find_one(
             Enrollment.user_id == data.user_id,
             Enrollment.course_id == data.course_id,
-            Enrollment.status == EnrollmentStatus.ACTIVE
+            Enrollment.status == EnrollmentStatus.ACTIVE,
+            Enrollment.is_deleted == False
         )
         
         if existing and await existing.is_active_now():
@@ -114,7 +128,7 @@ class EnrollmentService:
             }
         
         # Usar filtros de diccionario para mayor compatibilidad
-        query_filters = [{"user_id": user_oid}]
+        query_filters = [{"user_id": user_oid}, {"is_deleted": False}]
         
         if status:
             query_filters.append({"status": status})
@@ -182,7 +196,7 @@ class EnrollmentService:
         filters: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """Obtener todos los enrollments (Admin) con filtros, búsqueda y paginación"""
-        query_filters = []
+        query_filters = [Enrollment.is_deleted == False]
         
         if filters:
             if filters.get("user_id"):
@@ -277,7 +291,7 @@ class EnrollmentService:
         """Obtener enrollment por ID"""
         enrollment = await Enrollment.get(enrollment_id)
         
-        if not enrollment:
+        if not enrollment or enrollment.is_deleted:
             raise HTTPException(status_code=404, detail="Inscripción no encontrada")
         
         # Verificar permisos
@@ -301,7 +315,7 @@ class EnrollmentService:
         """
         enrollment = await Enrollment.get(enrollment_id)
         
-        if not enrollment:
+        if not enrollment or enrollment.is_deleted:
             raise HTTPException(status_code=404, detail="Inscripción no encontrada")
         
         # Solo el dueño puede actualizar su progreso
@@ -331,7 +345,7 @@ class EnrollmentService:
         """Extender expiración de enrollment (admin)"""
         enrollment = await Enrollment.get(enrollment_id)
         
-        if not enrollment:
+        if not enrollment or enrollment.is_deleted:
             raise HTTPException(status_code=404, detail="Inscripción no encontrada")
         
         # Extender fecha
@@ -348,16 +362,21 @@ class EnrollmentService:
         return await EnrollmentService._build_enrollment_response(enrollment)
     
     @staticmethod
-    async def cancel_enrollment(enrollment_id: str, admin: User) -> Dict[str, str]:
-        """Cancelar enrollment (admin)"""
+    async def delete_enrollment(enrollment_id: str, admin: User) -> Dict[str, str]:
+        """Eliminar enrollment (Admin) - Físico o Lógico según rol"""
         enrollment = await Enrollment.get(enrollment_id)
         
-        if not enrollment:
+        if not enrollment or enrollment.is_deleted:
             raise HTTPException(status_code=404, detail="Inscripción no encontrada")
         
-        enrollment.status = EnrollmentStatus.CANCELLED
-        enrollment.updated_by = str(admin.id)
-        
-        await enrollment.save()
-        
-        return {"message": "Inscripción cancelada correctamente"}
+        if admin.role == Role.SUPERADMIN:
+            # Borrado FÍSICO
+            await enrollment.delete()
+            return {"message": "Inscripción eliminada permanentemente"}
+        else:
+            # Borrado LÓGICO
+            enrollment.is_deleted = True
+            enrollment.deleted_at = datetime.utcnow()
+            enrollment.updated_by = str(admin.id)
+            await enrollment.save()
+            return {"message": "Inscripción enviada a papelera"}

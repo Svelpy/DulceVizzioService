@@ -135,13 +135,13 @@ async def extend_enrollment(
     return await EnrollmentService.extend_enrollment(enrollment_id, data, current_user)
 
 @router.delete("/{enrollment_id}")
-async def cancel_enrollment(
+async def delete_enrollment(
     enrollment_id: str,
     current_user: User = Depends(get_current_admin)
 ):
     """
-    Cancelar enrollment (Admin).
+    Eliminar enrollment (Admin).
     
-    Cambia status a CANCELLED.
+    Borrado físico (Superadmin) o suave (Admin).
     """
-    return await EnrollmentService.cancel_enrollment(enrollment_id, current_user)
+    return await EnrollmentService.delete_enrollment(enrollment_id, current_user)

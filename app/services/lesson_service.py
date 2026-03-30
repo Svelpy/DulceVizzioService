@@ -48,7 +48,7 @@ class LessonService:
                     has_access = True
              
         # Consultar lessons por course_id
-        lessons = await Lesson.find({"course_id": course.id}).sort("+order").to_list()
+        lessons = await Lesson.find({"course_id": course.id, "is_deleted": False}).sort("+order").to_list()
         
         # Si no tiene acceso, limpiar contenido sensible de lecciones no-preview
         if not has_access:
@@ -70,7 +70,7 @@ class LessonService:
         from app.models.enrollment import Enrollment
         
         lesson = await Lesson.get(lesson_id)
-        if not lesson:
+        if not lesson or lesson.is_deleted:
             raise HTTPException(status_code=404, detail="Lección no encontrada")
         
         # Obtener el curso para verificar permisos
@@ -125,7 +125,7 @@ class LessonService:
             
         # Calcular orden: siempre al final
         max_order_lesson = await Lesson.find(
-            {"course_id": course.id}
+            {"course_id": course.id, "is_deleted": False}
         ).sort("-order").first_or_none()
         
         next_order = (max_order_lesson.order + 1) if max_order_lesson else 1
@@ -155,7 +155,7 @@ class LessonService:
         from app.services.course_service import CourseService
         
         lesson = await Lesson.get(lesson_id)
-        if not lesson:
+        if not lesson or lesson.is_deleted:
             raise HTTPException(status_code=404, detail="Lección no encontrada")
             
         update_data = data.model_dump(exclude_unset=True)
@@ -178,12 +178,12 @@ class LessonService:
         REFACTORIZADO: Opera sobre la colección lessons directamente
         """
         lesson = await Lesson.get(lesson_id)
-        if not lesson:
+        if not lesson or lesson.is_deleted:
              raise HTTPException(status_code=404, detail="Lección no encontrada")
              
         # Obtener todas las lessons del mismo curso
         all_lessons = await Lesson.find(
-            {"course_id": lesson.course_id}
+            {"course_id": lesson.course_id, "is_deleted": False}
         ).sort("+order").to_list()
         
         # Reordenar lógica
@@ -217,17 +217,26 @@ class LessonService:
         from app.services.course_service import CourseService
         
         lesson = await Lesson.get(lesson_id)
-        if not lesson:
+        if not lesson or lesson.is_deleted:
             raise HTTPException(status_code=404, detail="Lección no encontrada")
             
         course_id = lesson.course_id
         
-        # Eliminar documento
-        await lesson.delete()
+        if user.role == Role.SUPERADMIN:
+            # Borrado físico
+            await lesson.delete()
+            msg = "Lección eliminada permanentemente"
+        else:
+            # Borrado lógico
+            lesson.is_deleted = True
+            lesson.deleted_at = datetime.utcnow()
+            lesson.updated_by = str(user.id)
+            await lesson.save()
+            msg = "Lección enviada a papelera"
         
         # Opcional: Reordenar lecciones restantes
         remaining_lessons = await Lesson.find(
-            {"course_id": course_id}
+            {"course_id": course_id, "is_deleted": False}
         ).sort("+order").to_list()
         
         for i, l in enumerate(remaining_lessons):
@@ -238,4 +247,4 @@ class LessonService:
         # Actualizar estadísticas del curso
         await CourseService.update_course_stats(str(course_id))
         
-        return {"message": "Lección eliminada correctamente"}
+        return {"message": msg}
