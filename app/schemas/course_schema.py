@@ -13,7 +13,7 @@ class CourseBase(BaseModel):
     """Schema base para Curso"""
     title: str = Field(..., min_length=5, max_length=100, description="Título del curso")
     description: str = Field(..., min_length=20, description="Descripción completa")
-    category: str = Field(..., min_length=2, max_length=50)
+    category: int = Field(..., description="ID de la categoría")
     subcategory: Optional[str] = Field(None, min_length=2, max_length=50)
     difficulty: CourseDifficulty = CourseDifficulty.INTERMEDIATE
     tags: List[str] = Field(default_factory=list)
@@ -36,7 +36,7 @@ class CourseUpdateSchema(BaseModel):
     """Schema para actualizar curso (PATCH partial)"""
     title: Optional[str] = Field(None, min_length=5, max_length=100)
     description: Optional[str] = Field(None, min_length=20)
-    category: Optional[str] = Field(None, min_length=2, max_length=50)
+    category: Optional[int] = Field(None, description="ID de la categoría")
     subcategory: Optional[str] = Field(None, min_length=2, max_length=50)
     difficulty: Optional[CourseDifficulty] = None
     tags: Optional[List[str]] = None
@@ -88,7 +88,7 @@ class CourseResponseSchema(CourseBase):
                 "title": "Macarons Perfectos",
                 "slug": "macarons-perfectos",
                 "description": "Aprende a hacer macarons franceses perfectos desde cero...",
-                "category": "Repostería",
+                "category": 1,
                 "subcategory": "Macarons",
                 "difficulty": "INTERMEDIATE",
                 "tags": ["macarons", "repostería francesa"],
