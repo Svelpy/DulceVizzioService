@@ -37,14 +37,15 @@ class AccessService:
         enrollment = await Enrollment.find_one(
             Enrollment.user_id == user_id,
             Enrollment.course_id == course_id,
-            Enrollment.status == EnrollmentStatus.ACTIVE
+            Enrollment.status == EnrollmentStatus.ACTIVE,
+            Enrollment.is_deleted == False
         )
         
         if not enrollment:
             return False
         
         # Verificar que no haya expirado
-        return enrollment.is_active_now()
+        return await enrollment.is_active_now()
     
     @staticmethod
     async def get_user_enrollment_for_course(user_id: str, course_id: str):
@@ -57,10 +58,11 @@ class AccessService:
         enrollment = await Enrollment.find_one(
             Enrollment.user_id == user_id,
             Enrollment.course_id == course_id,
-            Enrollment.status == EnrollmentStatus.ACTIVE
+            Enrollment.status == EnrollmentStatus.ACTIVE,
+            Enrollment.is_deleted == False
         )
         
-        if enrollment and enrollment.is_active_now():
+        if enrollment and await enrollment.is_active_now():
             return enrollment
         
         return None

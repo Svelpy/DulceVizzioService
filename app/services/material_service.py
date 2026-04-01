@@ -32,7 +32,7 @@ class MaterialService:
         Patrón CRUD para embebidos: Crear objeto → Agregarlo a lista → Guardar padre
         """
         lesson = await Lesson.get(lesson_id)
-        if not lesson:
+        if not lesson or lesson.is_deleted:
             raise HTTPException(status_code=404, detail="Lección no encontrada")
             
         # Validar archivo
@@ -105,7 +105,7 @@ class MaterialService:
         Patrón CRUD para embebidos: Vaciar lista → Guardar padre
         """
         lesson = await Lesson.get(lesson_id)
-        if not lesson:
+        if not lesson or lesson.is_deleted:
             raise HTTPException(status_code=404, detail="Lección no encontrada")
             
         # PATRÓN EMBEBIDO: Vaciar la lista
@@ -115,3 +115,27 @@ class MaterialService:
         await lesson.save()
         
         return {"message": f"Se eliminaron {deleted_count} materiales correctamente"}
+
+    @staticmethod
+    async def delete_material(lesson_id: str, material_order: int, user: User) -> Dict[str, str]:
+        """
+        Eliminar UN material específico por su orden.
+        Hard delete: lo saca de la lista y reordena los restantes.
+        """
+        lesson = await Lesson.get(lesson_id)
+        if not lesson or lesson.is_deleted:
+            raise HTTPException(status_code=404, detail="Lección no encontrada")
+        
+        # Buscar el material por order
+        material = next((m for m in lesson.materials if m.order == material_order), None)
+        if not material:
+            raise HTTPException(status_code=404, detail="Material no encontrado")
+        
+        # Eliminar de la lista
+        lesson.materials = [m for m in lesson.materials if m.order != material_order]
+        
+        lesson.updated_by = str(user.id)
+        await lesson.save()
+        
+        return {"message": f"Material '{material.title}' eliminado correctamente"}
+

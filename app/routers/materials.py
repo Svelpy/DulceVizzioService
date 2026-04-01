@@ -49,3 +49,16 @@ async def delete_all_materials(
     Operación masiva: Limpia la lista de materiales embebidos.
     """
     return await MaterialService.delete_all_materials(lesson_id, current_user)
+
+@router.delete("/lessons/{lesson_id}/materials/{material_order}")
+async def delete_material(
+    lesson_id: str,
+    material_order: int,
+    current_user: User = Depends(get_current_admin)
+):
+    """
+    Eliminar UN material específico por su número de orden (Admin).
+    Hard delete: Se elimina físicamente de la lista y se reordena el resto.
+    """
+    return await MaterialService.delete_material(lesson_id, material_order, current_user)
+

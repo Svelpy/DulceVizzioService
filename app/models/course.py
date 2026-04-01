@@ -57,7 +57,7 @@ class Course(BaseDocument):
     slug: Indexed(str, unique=True) = Field(..., description="Slug único para URL")
     description: str = Field(..., description="Descripción completa del curso")
     # Categorización
-    category: Indexed(str) = Field(..., description="Categoría principal")
+    category: Indexed(int) = Field(..., description="Categoría principal")
     subcategory: Optional[str] = Field(None, description="Subcategoría")
     tags: List[str] = Field(default_factory=list, description="Etiquetas")
     # Nivel
@@ -108,7 +108,7 @@ class Course(BaseDocument):
                 "title": "Macarons Perfectos",
                 "slug": "macarons-perfectos",
                 "description": "Aprende a hacer macarons franceses perfectos desde cero",
-                "category": "Repostería",
+                "category": 1,
                 "subcategory": "Macarons",
                 "tags": ["macarons", "repostería francesa", "postres"],
                 "difficulty": "INTERMEDIATE",

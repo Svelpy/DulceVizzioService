@@ -91,6 +91,14 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
+        # Verificar si el usuario fue eliminado
+        if user.is_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Esta cuenta ha sido eliminada. Contacta al administrador.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
         # Verificar contraseña
         if not verify_password(credentials.password, user.password_hash):
             raise HTTPException(

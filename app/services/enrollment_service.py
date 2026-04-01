@@ -81,15 +81,11 @@ class EnrollmentService:
         existing = await Enrollment.find_one(
             Enrollment.user_id == data.user_id,
             Enrollment.course_id == data.course_id,
-            Enrollment.status == EnrollmentStatus.ACTIVE,
             Enrollment.is_deleted == False
         )
         
-        if existing and await existing.is_active_now():
-            raise HTTPException(
-                status_code=400,
-                detail="El usuario ya tiene una inscripción activa en este curso"
-            )
+        if existing:
+            raise HTTPException(status_code=400,detail="El usuario ya tiene una inscripción en este curso")
         
         # Crear enrollment con expiración de 1 año
         enrollment = Enrollment.create_with_expiration(
@@ -137,7 +133,7 @@ class EnrollmentService:
         if search:
             # Buscar cursos que coincidan
             matching_courses = await Course.find(
-                {"title": {"$regex": search, "$options": "i"}}
+                {"title": {"$regex": search, "$options": "i"}, "is_deleted": False}
             ).to_list()
             
             if matching_courses:
@@ -167,7 +163,7 @@ class EnrollmentService:
         
         # Armamos un diccionario con todos los cursos de un solo usuario
         course_ids = list(set([e.course_id for e in items]))
-        courses = await Course.find({"_id": {"$in": course_ids}}).to_list()
+        courses = await Course.find({"_id": {"$in": course_ids}, "is_deleted": False}).to_list()
         courses_dict = {c.id: c for c in courses}  #diccionario {course_id:course object}
         #un unico user_doc para todas las vueltas
         user_doc = await User.get(user_id)      
@@ -323,7 +319,7 @@ class EnrollmentService:
             raise HTTPException(status_code=403, detail="No puedes actualizar esta inscripción")
         
         # Verificar que no haya expirado
-        if not enrollment.is_active_now():
+        if not await enrollment.is_active_now():
             raise HTTPException(status_code=403, detail="Tu inscripción ha expirado")
         
         # Actualizar progreso

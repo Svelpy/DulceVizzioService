@@ -313,7 +313,7 @@ async def toggle_user_active(
             detail="Usuario no encontrado"
         )
     
-    if not user:
+    if not user or user.is_deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuario no encontrado"
@@ -371,7 +371,7 @@ async def change_user_role(
             detail="Usuario no encontrado"
         )
     
-    if not user:
+    if not user or user.is_deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuario no encontrado"
@@ -403,6 +403,7 @@ async def delete_user(
     """
     from bson import ObjectId
     from datetime import datetime
+    from app.models.enrollment import Enrollment
     
     try:
         user = await User.get(ObjectId(user_id))
@@ -426,7 +427,15 @@ async def delete_user(
         # Borrado Lógico para ADMIN
         user.is_deleted = True
         user.deleted_at = datetime.utcnow()
+        user.updated_by = str(current_user.id)
         await user.save()
+        
+        enrollments = await Enrollment.find({"user_id": user.id, "is_deleted": False}).to_list()
+        for e in enrollments:
+            e.is_deleted = True
+            e.deleted_at = datetime.utcnow()
+            e.updated_by = str(current_user.id)
+            await e.save()
         
     elif current_user.role == Role.SUPERADMIN:
         if user.role == Role.SUPERADMIN:
@@ -434,7 +443,9 @@ async def delete_user(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No tienes permisos para eliminar a este usuario"
             )
+        
         # Borrado Físico REAL para SUPERADMIN
+        await Enrollment.find({"user_id": user.id}).delete()
         await user.delete()
     
     return None

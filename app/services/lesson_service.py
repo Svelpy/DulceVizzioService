@@ -120,7 +120,7 @@ class LessonService:
         from app.services.course_service import CourseService
         
         course = await Course.get(course_id)
-        if not course:
+        if not course or course.is_deleted:
             raise HTTPException(status_code=404, detail="Curso no encontrado")
             
         # Calcular orden: siempre al final

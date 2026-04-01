@@ -10,10 +10,10 @@ class Role(str, Enum):
 class CourseStatus(str, Enum):
     """Estado del curso en el ciclo de vida"""
     DRAFT = "DRAFT"  # En construcción
-    REVIEW = "REVIEW"  # En revisión
-    PUBLISHED = "PUBLISHED"  # Publicado y disponible
-    ARCHIVED = "ARCHIVED"  # Archivado (no disponible para nuevas inscripciones)
-    RETIRED = "RETIRED"  # Retirado (no visible en catálogo)
+    REVIEW = "REVIEW"  # Para futuras etapas
+    PUBLISHED = "PUBLISHED"  # DIsponible en explorar y mis cursos
+    ARCHIVED = "ARCHIVED"  # No disponible en explorar pero si en mis cursos
+    RETIRED = "RETIRED"  # No disponible en explorar ni en mis cursos
 
 
 class CourseDifficulty(str, Enum):

@@ -102,7 +102,8 @@ class CourseService:
                 # Usuario regular: obtener enrollments activos en UNA sola query
                 enrollments = await Enrollment.find({
                     "user_id": current_user.id,
-                    "status": "ACTIVE"
+                    "status": "ACTIVE",
+                    "is_deleted": False
                 }).to_list()
                 
                 # Crear set de course_ids para búsqueda O(1)
@@ -168,7 +169,7 @@ class CourseService:
         from app.models.lesson import Lesson
         
         # 1. Obtener todas las lecciones del curso ordenadas
-        lessons = await Lesson.find({"course_id": course.id}).sort("order").to_list()
+        lessons = await Lesson.find({"course_id": course.id, "is_deleted": False}).sort("order").to_list()
         
         # 2. Filtrar contenido sensible si NO está inscrito
         if not course.is_enrolled:
@@ -189,6 +190,11 @@ class CourseService:
     @staticmethod
     async def create_course(data: CourseCreateSchema, user: User) -> Course:
         """Crear nuevo curso"""
+        # Verificar que no exista un curso con el mismo título
+        existing = await Course.find_one({"title": data.title, "is_deleted": False})
+        if existing:
+            raise HTTPException(status_code=400, detail="Ya existe un curso con ese nombre")
+        
         slug_base = generate_slug(data.title)
         slug = await ensure_unique_slug_course(slug_base)
         
@@ -273,7 +279,7 @@ class CourseService:
             # Borrado FÍSICO: cascada destructiva
             await Lesson.find({"course_id": course.id}).delete()
             await Enrollment.find({"course_id": course.id}).delete()
-            await CourseReview.find({"course_id": str(course.id)}).delete()
+            #PENDIENTE:programar eliminacion de reviews
             await course.delete()
             return {"message": "Curso eliminado permanentemente junto con lecciones, inscripciones y reseñas"}
         elif user.role == Role.ADMIN:
@@ -300,12 +306,7 @@ class CourseService:
                 await e.save()
                 
             # Ocultar reseñas asociadas
-            reviews = await CourseReview.find({"course_id": str(course.id), "is_deleted": False}).to_list()
-            for r in reviews:
-                r.is_deleted = True
-                r.deleted_at = datetime.utcnow()
-                r.updated_by = str(user.id)
-                await r.save()
+
                 
             return {"message": "Curso enviado a papelera con todo su contenido asociado"}
         else:
