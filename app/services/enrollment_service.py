@@ -212,13 +212,13 @@ class EnrollmentService:
                 {"$or": [
                     {"username": {"$regex": search, "$options": "i"}},
                     {"full_name": {"$regex": search, "$options": "i"}}
-                ]}
+                ], "is_deleted": False}
             ).to_list()
             matching_user_ids = [u.id for u in matching_users]
             
             # Buscar cursos por título
             matching_courses = await Course.find(
-                {"title": {"$regex": search, "$options": "i"}}
+                {"title": {"$regex": search, "$options": "i"}, "is_deleted": False}
             ).to_list()
             matching_course_ids = [c.id for c in matching_courses]
             

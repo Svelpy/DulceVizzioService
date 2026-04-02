@@ -86,7 +86,7 @@ class Course(BaseDocument):
     async def get_lessons(self) -> List:
         """Obtiene las lecciones del curso ordenadas"""
         from app.models.lesson import Lesson
-        return await Lesson.find({"course_id": self.id}).sort("+order").to_list()
+        return await Lesson.find({"course_id": self.id, "is_deleted": False}).sort("+order").to_list()
     
     class Settings:
         name = "courses"

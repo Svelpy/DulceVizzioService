@@ -42,7 +42,8 @@ class LessonService:
                 enrollment = await Enrollment.find_one({
                     "user_id": user.id,
                     "course_id": course.id,
-                    "status": "ACTIVE"
+                    "status": "ACTIVE",
+                    "is_deleted": False
                 })
                 if enrollment and await enrollment.is_active_now():
                     has_access = True
@@ -75,7 +76,7 @@ class LessonService:
         
         # Obtener el curso para verificar permisos
         course = await Course.get(lesson.course_id)
-        if not course:
+        if not course or course.is_deleted:
             raise HTTPException(status_code=404, detail="Curso no encontrado")
         
         # Verificar acceso
@@ -92,7 +93,8 @@ class LessonService:
             enrollment = await Enrollment.find_one({
                 "user_id": user.id,
                 "course_id": course.id,
-                "status": "ACTIVE"
+                "status": "ACTIVE",
+                "is_deleted": False
             })
             if enrollment and await enrollment.is_active_now():
                 has_access = True

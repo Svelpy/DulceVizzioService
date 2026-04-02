@@ -93,7 +93,7 @@ class EnrollmentResponseSchema(BaseModel):
                     "title": "Curso de Torta Comercial",
                     "slug": "curso-de-torta-comercial",
                     "description": "Un curso completo para aprender repostería comercial...",
-                    "category": "Repostería",
+                    "category": 1,
                     "subcategory": "Tortas",
                     "difficulty": "INTERMEDIATE",
                     "tags": ["tortas", "comercial"],

@@ -51,7 +51,7 @@ class CourseService:
     async def get_courses(
         page: int = 1, 
         limit: int = 10,
-        category: Optional[str] = None,
+        category: Optional[int] = None,
         difficulty: Optional[str] = None,
         status: Optional[str] = None,
         search: Optional[str] = None,
@@ -160,7 +160,8 @@ class CourseService:
                 enrollment = await Enrollment.find_one({
                     "user_id": current_user.id,
                     "course_id": course.id,
-                    "status": "ACTIVE"
+                    "status": "ACTIVE",
+                    "is_deleted": False
                 })
                 if enrollment and await enrollment.is_active_now():
                     course.is_enrolled = True

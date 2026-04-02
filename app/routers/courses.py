@@ -30,7 +30,7 @@ router = APIRouter(
 async def get_courses(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
-    category: Optional[str] = None,
+    category: Optional[int] = Query(None, description="Filtrar por ID numérico de categoría"),
     difficulty: Optional[str] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,
