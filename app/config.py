@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     DEV_ORIGINS: str = "http://localhost:3000,http://localhost:5175,http://localhost:5174"
 
     # CORS — Orígenes de producción (DEBUG=False)
-    #ALLOWED_ORIGINS: str = "" Definido solo en el .env ;)
+    ALLOWED_ORIGINS: str = ""
 
     @property
     def cors_origins_list(self) -> list:
