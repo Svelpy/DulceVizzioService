@@ -2,7 +2,7 @@
 Router para endpoints de Lecciones (Clases)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form, Request
 from typing import List, Optional
 from app.models.user import User
 from app.schemas.lesson_schema import (
@@ -14,6 +14,7 @@ from app.schemas.lesson_schema import (
 from app.services.lesson_service import LessonService
 from app.services.cloudinary_service import CloudinaryService
 from app.utils.dependencies import get_current_user, get_current_admin, get_current_user_optional
+from app.utils.limiter import limiter
 # from app.routers.courses import get_current_admin # YA NO NECESARIO
 
 router = APIRouter(
@@ -24,7 +25,9 @@ router = APIRouter(
 
 
 @router.get("/lessons/{lesson_id}", response_model=LessonResponseSchema)
+@limiter.limit("60/minute")
 async def get_lesson(
+    request: Request,
     lesson_id: str,
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
@@ -32,6 +35,8 @@ async def get_lesson(
     Obtener detalle de una lección.
     - Preview: Acceso público
     - No preview: Solo usuarios inscritos
+
+    **Rate Limit:** 60 peticiones por minuto por IP
     """
     return await LessonService.get_lesson_by_id(lesson_id, current_user)
 

@@ -1,5 +1,6 @@
 from beanie import Indexed
-from pydantic import EmailStr, Field
+from pymongo import IndexModel, ASCENDING
+from pydantic import EmailStr
 from typing import Optional
 from datetime import datetime
 from .base import BaseDocument
@@ -20,8 +21,7 @@ class User(BaseDocument):
     username: Indexed(str, unique=True) = None
     full_name: str
     password_hash: str  # Contraseña hasheada con bcrypt
-
-    
+   
     role: Role = Role.USER  # Ahora usa el Enum
     is_active: bool = True
 
@@ -29,30 +29,16 @@ class User(BaseDocument):
     phone_number: Optional[str] = None
     birth_date: Optional[datetime] = None
     
-    # created_at y updated_at ahora vienen de BaseDocument
-    
     class Settings:
         name = "users"  # Nombre de la colección en MongoDB
         indexes = [
-            "email",
-            "username",
-            "role",
-            "is_active",
+            IndexModel([("is_deleted", ASCENDING), ("role", ASCENDING)]),
+            IndexModel([("is_deleted", ASCENDING), ("is_active", ASCENDING)]),
         ]
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "email": "admin@dulcevicio.com",
-                "username": "admin",
-                "full_name": "Admin DulceVicio",
-                "role": "ADMIN",
-                "is_active": True
-            }
-        }
     
     def __repr__(self):
         return f"<User {self.email} ({self.role})>"
     
     def __str__(self):
         return self.email
+  

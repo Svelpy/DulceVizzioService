@@ -16,6 +16,7 @@ from app.services.cloudinary_service import CloudinaryService
 from datetime import datetime
 from app.models.enrollment import Enrollment
 from app.models.course import CourseReview
+import re
 
 class CourseService:
     
@@ -81,7 +82,8 @@ class CourseService:
             query_filters.append(Course.difficulty == difficulty)
             
         if search:
-            query_filters.append({"title": {"$regex": search, "$options": "i"}})
+            safe_search=re.escape(search)
+            query_filters.append({"title": {"$regex": safe_search, "$options": "i"}})
 
         query = Course.find(*query_filters)
         total = await query.count()
@@ -284,10 +286,12 @@ class CourseService:
             await course.delete()
             return {"message": "Curso eliminado permanentemente junto con lecciones, inscripciones y reseñas"}
         elif user.role == Role.ADMIN:
+            from app.models.enums import EnrollmentStatus
+            
             # Borrado LÓGICO: cascada de ocultamiento
             course.is_deleted = True
             course.deleted_at = datetime.utcnow()
-            course.updated_by = str(user.id)
+            course.deleted_by = str(user.id)
             await course.save()
             
             # Ocultar también lecciones asociadas
@@ -295,7 +299,7 @@ class CourseService:
             for l in lessons:
                 l.is_deleted = True
                 l.deleted_at = datetime.utcnow()
-                l.updated_by = str(user.id)
+                l.deleted_by = str(user.id)
                 await l.save()
                 
             # Ocultar también inscripciones asociadas
@@ -303,11 +307,11 @@ class CourseService:
             for e in enrollments:
                 e.is_deleted = True
                 e.deleted_at = datetime.utcnow()
-                e.updated_by = str(user.id)
+                e.deleted_by = str(user.id)
+                e.status = EnrollmentStatus.CANCELLED
                 await e.save()
                 
-            # Ocultar reseñas asociadas
-
+            # TODO: Ocultar reseñas asociadas (CourseReview)
                 
             return {"message": "Curso enviado a papelera con todo su contenido asociado"}
         else:

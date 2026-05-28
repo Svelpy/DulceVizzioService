@@ -41,19 +41,24 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str
     CLOUDINARY_API_SECRET: str
     
-    # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
-    
+    # CORS — Orígenes de desarrollo (DEBUG=True)
+    DEV_ORIGINS: str = "http://localhost:3000,http://localhost:5175,http://localhost:5174"
+
+    # CORS — Orígenes de producción (DEBUG=False)
+    #ALLOWED_ORIGINS: str = "" Definido solo en el .env ;)
+
     @property
     def cors_origins_list(self) -> list:
         """
-        Retorna la lista de orígenes permitidos.
-        - Si DEBUG=True: retorna ["*"] (todos)
-        - Si DEBUG=False: parsea ALLOWED_ORIGINS
+        Retorna la lista de orígenes CORS según el modo:
+        - DEBUG=True  → DEV_ORIGINS   (orígenes de desarrollo local)
+        - DEBUG=False → ALLOWED_ORIGINS (orígenes de producción del .env)
         """
         if self.DEBUG:
-            return ["*"]
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+            #return ["*"]
+            return [o.strip() for o in self.DEV_ORIGINS.split(",") if o.strip()]
+
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
     
     class Config:
         env_file = ".env"

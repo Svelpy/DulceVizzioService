@@ -7,9 +7,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from app.utils.limiter import limiter
 
 from app.config import settings
 from app.database import connect_to_mongo, close_mongo_connection
@@ -43,18 +43,19 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="API REST para gestión de cursos de repostería con MongoDB Atlas y Cloudinary",
-    lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc"
+    lifespan=lifespan, 
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 # Configurar Rate Limiting
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+# El limiter se define en app/utils/limiter.py para evitar importaciones circulares
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-# Configurar CORS (permite todos los orígenes en DEBUG, específicos en producción)
+# Configurar CORS — DEBUG=True usa DEV_ORIGINS, DEBUG=False usa ALLOWED_ORIGINS (ambos desde .env)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

@@ -2,7 +2,7 @@
 Router para endpoints de Enrollments (Inscripciones)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import Optional
 from app.models.user import User
 from app.models.enums import EnrollmentStatus
@@ -15,6 +15,7 @@ from app.schemas.enrollment_schema import (
 )
 from app.services.enrollment_service import EnrollmentService
 from app.utils.dependencies import get_current_user, get_current_admin
+from app.utils.limiter import limiter
 
 router = APIRouter(
     prefix="/api/enrollments",
@@ -24,7 +25,9 @@ router = APIRouter(
 # --- Endpoints de Usuario ---
 
 @router.get("/me", response_model=EnrollmentListResponse)
+@limiter.limit("30/minute")
 async def get_my_enrollments(
+    request: Request,
     search: Optional[str] = Query(None, description="Buscar por título de curso"),
     status: Optional[EnrollmentStatus] = Query(None, description="Filtrar por estado"),
     page: int = Query(1, ge=1, description="Número de página"),
@@ -33,12 +36,14 @@ async def get_my_enrollments(
 ):
     """
     Obtener mis enrollments (cursos a los que estoy inscrito).
-    
+
     Query params:
     - search: Buscar por título de curso (opcional)
     - status: ACTIVE | EXPIRED | CANCELLED (opcional)
     - page: Página actual (default 1)
     - size: Items por página (default 10)
+
+    **Rate Limit:** 30 peticiones por minuto por IP
     """
     return await EnrollmentService.get_user_enrollments(
         user_id=str(current_user.id),
@@ -50,27 +55,36 @@ async def get_my_enrollments(
 
 
 @router.get("/{enrollment_id}", response_model=EnrollmentResponseSchema)
+@limiter.limit("30/minute")
 async def get_enrollment(
+    request: Request,
     enrollment_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """
     Obtener detalle de un enrollment.
     Solo el dueño o admin puede verlo.
+
+    **Rate Limit:** 30 peticiones por minuto por IP
     """
     return await EnrollmentService.get_enrollment_by_id(enrollment_id, current_user)
 
 @router.patch("/{enrollment_id}/progress")
+@limiter.limit("40/minute")
 async def update_progress(
+    request: Request,
     enrollment_id: str,
     data: EnrollmentProgressUpdateSchema,
     current_user: User = Depends(get_current_user)
 ):
     """
     Guardar progreso de video.
-    
+
     Frontend debe llamar esto cada 10-30 segundos mientras ve el video.
     Guarda la posición actual para "continuar viendo".
+
+    **Rate Limit:** 40 peticiones por minuto por IP
+    (permite ~1 llamada cada 1.5s, suficiente para polling de progreso normal)
     """
     return await EnrollmentService.update_progress(enrollment_id, data, current_user)
 

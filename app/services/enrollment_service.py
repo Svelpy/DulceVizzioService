@@ -15,7 +15,7 @@ from app.schemas.enrollment_schema import (
     EnrollmentProgressUpdateSchema,
     EnrollmentExtendSchema
 )
-
+import re
 
 class EnrollmentService:
     @staticmethod
@@ -131,9 +131,10 @@ class EnrollmentService:
         
         # Si hay búsqueda, necesitamos filtrar por título de curso
         if search:
+            safe_search=re.escape(search)
             # Buscar cursos que coincidan
             matching_courses = await Course.find(
-                {"title": {"$regex": search, "$options": "i"}, "is_deleted": False}
+                {"title": {"$regex": safe_search, "$options": "i"}, "is_deleted": False}
             ).to_list()
             
             if matching_courses:
@@ -204,21 +205,22 @@ class EnrollmentService:
         
         # Si hay búsqueda, buscar en usuarios Y cursos
         if search:
+            safe_search=re.escape(search)
             matching_user_ids = []
             matching_course_ids = []
             
             # Buscar usuarios por username o full_name
             matching_users = await User.find(
                 {"$or": [
-                    {"username": {"$regex": search, "$options": "i"}},
-                    {"full_name": {"$regex": search, "$options": "i"}}
+                    {"username": {"$regex": safe_search, "$options": "i"}},
+                    {"full_name": {"$regex": safe_search, "$options": "i"}}
                 ], "is_deleted": False}
             ).to_list()
             matching_user_ids = [u.id for u in matching_users]
             
             # Buscar cursos por título
             matching_courses = await Course.find(
-                {"title": {"$regex": search, "$options": "i"}, "is_deleted": False}
+                {"title": {"$regex": safe_search, "$options": "i"}, "is_deleted": False}
             ).to_list()
             matching_course_ids = [c.id for c in matching_courses]
             

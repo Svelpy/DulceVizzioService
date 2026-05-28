@@ -232,7 +232,7 @@ class LessonService:
             # Borrado lógico
             lesson.is_deleted = True
             lesson.deleted_at = datetime.utcnow()
-            lesson.updated_by = str(user.id)
+            lesson.deleted_by = str(user.id)
             await lesson.save()
             msg = "Lección enviada a papelera"
         

@@ -9,16 +9,16 @@ class BaseDocument(Document):
     Modelo base que extiende Beanie Document.
     Incluye campos de auditoría automática.
     """
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    created_by: Optional[str] = None 
-    updated_by: Optional[str] = None  
     
-    revision_id: Optional[UUID] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_by: Optional[str] = None 
+    
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_by: Optional[str] = None 
     
     is_deleted: bool = False
     deleted_at: Optional[datetime] = None
-
+    deleted_by: Optional[str] = None 
 
     class Settings:
         # NO usar is_root=True para permitir que cada modelo tenga su propia colección

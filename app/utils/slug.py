@@ -34,7 +34,7 @@ async def ensure_unique_slug_course(slug: str) -> str:
     original_slug = slug
     counter = 1
     
-    while await Course.find({"slug": slug}).count() > 0:
+    while await Course.find({"slug": slug, "is_deleted": False}).count() > 0:
         slug = f"{original_slug}-{counter}"
         counter += 1
         

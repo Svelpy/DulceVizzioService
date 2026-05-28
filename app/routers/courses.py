@@ -2,7 +2,7 @@
 Router para endpoints de Cursos
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Query, Request
 from typing import List, Optional
 from app.models.user import User
 from app.models.course import Course
@@ -16,6 +16,7 @@ from app.schemas.course_schema import (
 )
 from app.services.course_service import CourseService
 from app.utils.dependencies import get_current_user, get_current_admin, get_current_superadmin, get_current_user_optional
+from app.utils.limiter import limiter
 
 router = APIRouter(
     prefix="/api/courses",
@@ -27,7 +28,9 @@ router = APIRouter(
 # --- Endpoints Públicos ---
 
 @router.get("", response_model=dict)
+@limiter.limit("60/minute")
 async def get_courses(
+    request: Request,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     category: Optional[int] = Query(None, description="Filtrar por ID numérico de categoría"),
@@ -40,19 +43,23 @@ async def get_courses(
     Listar cursos paginados.
     - Usuario logeado o usuario sin logear: Solo ve cursos PUBLISHED (y no eliminados).
     - Admin: Puede filtrar por cualquier status.
+
+    **Rate Limit:** 60 peticiones por minuto por IP
     """
     return await CourseService.get_courses(
-        page=page, 
-        limit=limit, 
-        category=category, 
-        difficulty=difficulty, 
+        page=page,
+        limit=limit,
+        category=category,
+        difficulty=difficulty,
         status=status,
         search=search,
         current_user=current_user
     )
 
 @router.get("/{slug}", response_model=CourseDetailResponseSchema)
+@limiter.limit("60/minute")
 async def get_course(
+    request: Request,
     slug: str,
     current_user: Optional[User] = Depends(get_current_user_optional) # Opcional para acceso público
 ):
@@ -60,6 +67,8 @@ async def get_course(
     Obtener detalle de un curso por slug (o ID).
     - usuario no logueado o usuario no inscrito: Solo ve metadatos y lecciones preview
     - usuario inscrito o admin o superadmin: Ve todo el contenido
+
+    **Rate Limit:** 60 peticiones por minuto por IP
     """
     return await CourseService.get_course_by_slug(slug, current_user=current_user)
 
