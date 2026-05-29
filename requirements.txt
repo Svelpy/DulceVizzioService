@@ -33,3 +33,6 @@ slowapi>=0.1.9
 
 # ===== Procesamiento de Imágenes =====
 Pillow>=11.0.0
+
+# ===== Procesamiento de Excel =====
+openpyxl>=3.1.0

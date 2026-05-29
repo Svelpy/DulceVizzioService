@@ -181,3 +181,30 @@ class PaginatedResponse(BaseModel, Generic[T]):
     per_page: int       # Registros por página
     total_pages: int    # Total de páginas
     data: List[T]       # Lista de objetos
+
+
+class BatchUserResult(BaseModel):
+    """Resultado de un usuario creado exitosamente en la carga masiva"""
+    row: int
+    id: str
+    email: str
+    username: str
+    full_name: str
+    temporary_password: str
+
+
+class BatchUserError(BaseModel):
+    """Detalle de un error en la carga masiva"""
+    row: int
+    error: str
+    data: Optional[dict] = None
+
+
+class BatchUploadResponse(BaseModel):
+    """Schema de respuesta para la carga masiva de usuarios"""
+    total_processed: int
+    created_count: int
+    error_count: int
+    created_users: List[BatchUserResult]
+    errors: List[BatchUserError]
+
