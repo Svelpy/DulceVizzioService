@@ -177,6 +177,59 @@ class AuthService:
         
         return {"message": "Contraseña actualizada exitosamente"}
 
+    @staticmethod
+    async def register_self(user_data: UserSelfRegister) -> User:
+        """
+        Registrar un nuevo usuario de forma pública (auto-registro)
+        El rol siempre será Role.USER (Estudiante)
+        
+        Args:
+            user_data: Datos de auto-registro del usuario
+            
+        Returns:
+            Usuario creado
+            
+        Raises:
+            HTTPException 400: Si el email o el username ya están en uso
+        """
+        # 1. Verificar si el email ya existe
+        existing_user = await User.find_one(User.email == user_data.email)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El email ya está registrado"
+            )
+        
+        # 2. Gestionar y verificar el username
+        username = user_data.username
+        if username:
+            existing_username = await User.find_one(User.username == username)
+            if existing_username:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El username ya está en uso"
+                )
+        else:
+            # Si no se ingresó username, lo autogeneramos a partir del nombre completo de forma única
+            from app.utils.user_utils import generate_chef_username
+            username = await generate_chef_username(user_data.full_name)
+
+        # 3. Crear e insertar el nuevo usuario en MongoDB
+        new_user = User(
+            email=user_data.email,
+            username=username,
+            full_name=user_data.full_name,
+            password_hash=hash_password(user_data.password),
+            role=Role.USER,
+            is_active=True,
+            created_by="self_register",
+            updated_by="self_register",
+            phone_number=user_data.phone_number,
+            birth_date=user_data.birth_date
+        )
+        
+        await new_user.insert()
+        return new_user
 
 # Instancia global del servicio
 auth_service = AuthService()

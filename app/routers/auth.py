@@ -10,7 +10,8 @@ from app.schemas.user_schema import (
     UserLogin,
     TokenResponse,
     UserResponse,
-    ChangePasswordSchema
+    ChangePasswordSchema,
+    UserSelfRegister
 )
 from app.services.auth_service import auth_service
 from app.services.cloudinary_service import cloudinary_service
@@ -101,3 +102,21 @@ async def change_password(
         current_password=password_data.current_password,
         new_password=password_data.new_password
     )
+
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
+async def register(request: Request, user_data: UserSelfRegister):
+    """
+    Registrar un nuevo estudiante (público)
+    
+    - **email**: Email único para la cuenta (obligatorio)
+    - **full_name**: Nombre completo (obligatorio)
+    - **password**: Contraseña segura (obligatorio)
+    - **username**: Nombre de usuario (obligatorio)
+    - **phone_number**: Teléfono con formato (opcional)
+    - **birth_date**: Fecha de nacimiento (opcional)
+    
+    **Rate Limit:** Máximo 5 registros por minuto por IP.
+    """
+    return await auth_service.register_self(user_data)
