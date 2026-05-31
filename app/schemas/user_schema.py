@@ -96,6 +96,30 @@ class UserUpdate(BaseModel):
         return v.strip()
 
 
+class UserSelfUpdate(BaseModel):
+    """Schema para que el propio usuario actualice sus datos de perfil (auto-gestión)"""
+    full_name: Optional[str] = Field(None, min_length=2, max_length=100)
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    phone_number: Optional[str] = Field(None, pattern=r'^\+\d{5,15}$')
+    birth_date: Optional[datetime] = None
+
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not re.match(r'^[a-zA-Z0-9_-]+$', v):
+            raise ValueError('El username solo puede contener letras, números, guiones (-) y guiones bajos (_)')
+        return v
+    
+    @field_validator('full_name')
+    @classmethod
+    def validate_full_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return v.strip()
+
+
 class UserResponse(UserBase):
     """Schema de respuesta de usuario (sin contraseña)"""
     id: PydanticObjectId

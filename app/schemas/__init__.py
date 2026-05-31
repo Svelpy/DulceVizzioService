@@ -9,7 +9,8 @@ from .user_schema import (
     UserResponse, 
     UserLogin, 
     TokenResponse, 
-    ChangePasswordSchema
+    ChangePasswordSchema,
+    UserSelfUpdate
 )
 
 from .course_schema import (

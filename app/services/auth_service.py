@@ -9,7 +9,7 @@ from fastapi import HTTPException, status
 
 from app.models.user import User
 from app.models.enums import Role
-from app.schemas.user_schema import UserCreate, UserSelfRegister, UserLogin, TokenResponse, UserResponse
+from app.schemas.user_schema import UserCreate, UserSelfRegister, UserLogin, TokenResponse, UserResponse, UserSelfUpdate
 from app.utils.security import hash_password, verify_password, create_access_token
 from bson import ObjectId
 
@@ -230,6 +230,32 @@ class AuthService:
         
         await new_user.insert()
         return new_user
+    
+    @staticmethod
+    async def update_profile(user: User, update_data: UserSelfUpdate) -> User:
+        """
+        Actualiza los datos del perfil del propio usuario autenticado.
+        Valida que el nuevo username (si cambia) sea único en la base de datos.
+        """
+        # 1. Si cambia el username, validar que no esté en uso por otra persona
+        username = update_data.username
+        if username and username != user.username:
+            existing_username = await User.find_one(User.username == username)
+            if existing_username:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El username ya está en uso"
+                )
+        # 2. Actualizar dinámicamente los campos enviados
+        update_dict = update_data.model_dump(exclude_unset=True)
+        for key, value in update_dict.items():
+            setattr(user, key, value)
+
+        # 3. Registrar auditoría básica y guardar
+        user.updated_by = str(user.id)
+        await user.save()
+
+        return user
 
 # Instancia global del servicio
 auth_service = AuthService()

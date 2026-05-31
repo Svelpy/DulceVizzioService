@@ -11,7 +11,8 @@ from app.schemas.user_schema import (
     TokenResponse,
     UserResponse,
     ChangePasswordSchema,
-    UserSelfRegister
+    UserSelfRegister,
+    UserSelfUpdate
 )
 from app.services.auth_service import auth_service
 from app.services.cloudinary_service import cloudinary_service
@@ -121,3 +122,24 @@ async def register(request: Request, user_data: UserSelfRegister):
     **Rate Limit:** Máximo 5 registros por minuto por IP.
     """
     return await auth_service.register_self(user_data)
+
+
+@router.patch("/me", response_model=UserResponse)
+@limiter.limit("10/minute")
+async def update_my_profile(
+    request: Request,
+    update_data: UserSelfUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Actualizar información básica del perfil del usuario autenticado (Estudiante)
+    
+    Permite al usuario editar su propio:
+    - **full_name**: Nombre completo (mínimo 2 caracteres)
+    - **username**: Nombre de usuario único (alfanumérico)
+    - **phone_number**: Teléfono con formato +591...
+    - **birth_date**: Fecha de nacimiento
+    
+    **Rate Limit:** Máximo 10 peticiones por minuto por IP.
+    """
+    return await auth_service.update_profile(current_user, update_data)
