@@ -9,10 +9,7 @@ from .user_schema import (
     UserResponse, 
     UserLogin, 
     TokenResponse, 
-    ChangePasswordSchema,
-    BatchUploadResponse,
-    BatchUserResult,
-    BatchUserError
+    ChangePasswordSchema
 )
 
 from .course_schema import (

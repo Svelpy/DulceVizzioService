@@ -6,7 +6,7 @@ Thin router — delega toda la lógica de negocio a UserService
 from fastapi import APIRouter, Depends, HTTPException, status, Body, File, UploadFile, Query
 from typing import Optional
 
-from app.schemas.user_schema import UserResponse, UserUpdate, UserCreate, PasswordValidationMixin, PaginatedResponse, BatchUploadResponse
+from app.schemas.user_schema import UserResponse, UserUpdate, UserCreate, PasswordValidationMixin, PaginatedResponse
 from app.models.user import User
 from app.models.enums import Role
 from app.utils.dependencies import get_current_admin, get_current_superadmin
@@ -45,31 +45,6 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
 
     return await auth_service.register_user(user_data, created_by=str(current_user.id))
 
-
-@router.post("/batch", response_model=BatchUploadResponse, status_code=status.HTTP_201_CREATED)
-async def batch_create_users(
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_admin)
-):
-    """
-    Crear usuarios por lote desde un archivo Excel (ADMIN o SUPERADMIN)
-
-    Sube un archivo Excel (.xlsx) con las columnas:
-    - **email** (obligatorio): Email del usuario
-    - **fullname** (obligatorio): Nombre completo
-    - **telefono** (opcional): Número de teléfono con código de país (+591...)
-    - **cumpleaños** (opcional): Fecha de nacimiento
-
-    **Comportamiento:**
-    - Todos los usuarios se crean con rol **USER**
-    - Se genera un **username** automático con prefijo "Chef" + primer nombre
-    - Si ya existe, se prueba con segundo nombre, luego apellido, luego sufijo numérico
-    - Se genera una **contraseña temporal** aleatoria para cada usuario
-    - La respuesta incluye las contraseñas temporales para que el admin las distribuya
-
-    **Respuesta:** Resumen con usuarios creados y errores por fila
-    """
-    return await user_service.batch_create_users(file=file, actor=current_user)
 
 
 @router.get("", response_model=PaginatedResponse[UserResponse])

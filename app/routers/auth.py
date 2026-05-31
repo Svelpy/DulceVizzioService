@@ -113,7 +113,8 @@ async def register(request: Request, user_data: UserSelfRegister):
     - **email**: Email único para la cuenta (obligatorio)
     - **full_name**: Nombre completo (obligatorio)
     - **password**: Contraseña segura (obligatorio)
-    - **username**: Nombre de usuario (obligatorio)
+    
+    - **username**: Nombre de usuario (opcional)
     - **phone_number**: Teléfono con formato (opcional)
     - **birth_date**: Fecha de nacimiento (opcional)
     
