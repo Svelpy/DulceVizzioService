@@ -17,17 +17,17 @@ class User(BaseDocument):
     - USER: Estudiante.
     """
     
-    email: Indexed(EmailStr, unique=True)  # Email único e indexado
-    username: Indexed(str, unique=True) = None
+    email: Indexed(EmailStr, unique=True)
+    username: Indexed(str, unique=True)
     full_name: str
-    password_hash: str  # Contraseña hasheada con bcrypt
+    password_hash: str 
    
-    role: Role = Role.USER  # Ahora usa el Enum
+    role: Role = Role.USER
     is_active: bool = True
 
     avatar_url: Optional[str] = None
-    phone_number: Optional[str] = None
-    birth_date: Optional[datetime] = None
+    phone_number: str
+    birth_date: datetime
     
     class Settings:
         name = "users"  # Nombre de la colección en MongoDB

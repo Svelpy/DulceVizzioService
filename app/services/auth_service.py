@@ -200,19 +200,9 @@ class AuthService:
                 detail="El email ya está registrado"
             )
         
-        # 2. Gestionar y verificar el username
-        username = user_data.username
-        if username:
-            existing_username = await User.find_one(User.username == username)
-            if existing_username:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="El username ya está en uso"
-                )
-        else:
-            # Si no se ingresó username, lo autogeneramos a partir del nombre completo de forma única
-            from app.utils.user_utils import generate_chef_username
-            username = await generate_chef_username(user_data.full_name)
+        # 2. Autogenerar el username de forma única a partir del nombre completo
+        from app.utils.user_utils import generate_chef_username
+        username = await generate_chef_username(user_data.full_name)
 
         # 3. Crear e insertar el nuevo usuario en MongoDB
         new_user = User(

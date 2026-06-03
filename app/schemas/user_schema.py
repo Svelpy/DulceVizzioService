@@ -18,9 +18,18 @@ class UserBase(BaseModel):
     """Schema base para Usuario"""
     email: EmailStr
     full_name: str = Field(..., min_length=2, max_length=100)
-    username: str = Field(None, min_length=3, max_length=50)
-    phone_number: Optional[str] = Field(None, pattern=r'^\+\d{5,15}$')
-    birth_date: Optional[datetime] = None
+    phone_number: str = Field(..., pattern=r'^\+\d{5,15}$')
+    birth_date: datetime
+    
+    @field_validator('full_name')
+    @classmethod
+    def validate_full_name(cls, v: str) -> str:
+        return v.strip()
+
+
+class UsernameMixin(BaseModel):
+    """Mixin para campo username con validación"""
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
 
     @field_validator('username')
     @classmethod
@@ -30,11 +39,6 @@ class UserBase(BaseModel):
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError('El username solo puede contener letras, números, guiones (-) y guiones bajos (_)')
         return v
-    
-    @field_validator('full_name')
-    @classmethod
-    def validate_full_name(cls, v: str) -> str:
-        return v.strip()
 
 
 class PasswordValidationMixin(BaseModel):
@@ -55,18 +59,17 @@ class PasswordValidationMixin(BaseModel):
         return v
 
 
-class UserSelfRegister(UserBase, PasswordValidationMixin):
+class UserSelfRegister(UserBase):
     """
     Schema para auto-registro público (solo USER)
-    Hereda validación de password del Mixin
     """
     pass
 
 
-class UserCreate(UserBase, PasswordValidationMixin):
+class UserCreate(UserBase, PasswordValidationMixin, UsernameMixin):
     """
     Schema para crear usuario (uso administrativo)
-    Hereda validación de password del Mixin
+    Hereda validación de password y username de los Mixins
     """
     role: Role = Role.USER
 
@@ -123,12 +126,10 @@ class UserSelfUpdate(BaseModel):
 class UserResponse(UserBase):
     """Schema de respuesta de usuario (sin contraseña)"""
     id: PydanticObjectId
-    # email, full_name, username heredados de UserBase
+    username: str
     role: Role
     is_active: bool
     avatar_url: Optional[str] = None
-    phone_number: Optional[str] = None
-    birth_date: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     created_by: Optional[str] = None 
