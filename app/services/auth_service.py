@@ -201,15 +201,16 @@ class AuthService:
             )
         
         # 2. Autogenerar el username de forma única a partir del nombre completo
-        from app.utils.user_utils import generate_chef_username
+        from app.utils.user_utils import generate_chef_username,generate_user_password
         username = await generate_chef_username(user_data.full_name)
-
+        #2.5. Autogenerar la contraseña a partir de la fecha de nacimiento
+        password = generate_user_password(user_data.birth_date)
         # 3. Crear e insertar el nuevo usuario en MongoDB
         new_user = User(
             email=user_data.email,
             username=username,
             full_name=user_data.full_name,
-            password_hash=hash_password(user_data.password),
+            password_hash=hash_password(password),
             role=Role.USER,
             is_active=True,
             created_by="self_register",
